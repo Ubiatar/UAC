@@ -1,0 +1,5 @@
+{
+    "tests": [
+        "test/contracts/ico/UacCrowdsale.js"
+    ]
+}
