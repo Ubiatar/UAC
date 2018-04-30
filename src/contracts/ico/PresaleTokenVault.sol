@@ -1,5 +1,6 @@
 /**
  * @title PresaleTokenVault
+ * @dev A token holder contract that allows multiple beneficiaries to extract their tokens after a given release time.
  *
  * @version 1.0
  * @author Validity Labs AG <info@validitylabs.org>
@@ -12,16 +13,13 @@ import "../../../node_modules/zeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../ico/UacCrowdsale.sol";
 
-/**
- * @title PresaleTokenVault
- * @dev a token holder contract that will allow multiple beneficiaries to extract the tokens after a given release time
- */
 contract PresaleTokenVault {
     using SafeMath for uint256;
     using SafeERC20 for ERC20Basic;
 
-    uint256 public constant VESTING_OFFSET = 90 days;  // starting of vesting
-    uint256 public constant VESTING_DURATION = 180 days; // duration of vesting
+    /*** CONSTANTS ***/
+    uint256 public constant VESTING_OFFSET = 90 days;                   // starting of vesting
+    uint256 public constant VESTING_DURATION = 180 days;                // duration of vesting
 
     uint256 public start;
     uint256 public cliff;
@@ -37,8 +35,16 @@ contract PresaleTokenVault {
 
     Investment[] public investments;
 
-    mapping(address => uint256) public investorLUT; // key: investor address; value: index in investments array
+    // key: investor address; value: index in investments array.
+    mapping(address => uint256) public investorLUT;
 
+    /**
+     * @dev Constructor.
+     * @param beneficiaries Array of addresses of the beneficiaries to whom vested tokens are transferred.
+     * @param balances Array of token amounts to be transferred per beneficiary.
+     * @param startTime Start time from which the cliff will be calculated. This is seven days after ICO's end time.
+     * @param _token The UAC Token, which is being vested.
+     */
     function PresaleTokenVault(address[] beneficiaries, uint256[] balances, uint256 startTime, address _token) public {
         require(beneficiaries.length == balances.length);
 
@@ -54,6 +60,10 @@ contract PresaleTokenVault {
         }
     }
 
+    /**
+     * @dev Allows a sender to transfer vested tokens to the beneficiary's address.
+     * @param beneficiary The address that will receive the vested tokens.
+     */
     function release(address beneficiary) public {
         uint256 unreleased = releasableAmount(beneficiary);
         require(unreleased > 0);
@@ -63,16 +73,27 @@ contract PresaleTokenVault {
         token.safeTransfer(beneficiary, unreleased);
     }
 
+    /**
+     * @dev Transfers vested tokens to the sender's address.
+     */
     function release() public {
         release(msg.sender);
     }
 
+    /**
+     * @dev Calculates the amount that has already vested but hasn't been released yet.
+     * @param beneficiary The address that will receive the vested tokens.
+     */
     function releasableAmount(address beneficiary) public view returns (uint256) {
         uint256 investmentIndex = investorLUT[beneficiary];
 
         return vestedAmount(beneficiary).sub(investments[investmentIndex].released);
     }
 
+    /**
+     * @dev Calculates the amount that has already vested.
+     * @param beneficiary The address that will receive the vested tokens.
+     */
     function vestedAmount(address beneficiary) public view returns (uint256) {
 
         uint256 investmentIndex = investorLUT[beneficiary];

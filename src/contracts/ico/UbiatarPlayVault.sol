@@ -1,5 +1,6 @@
 /**
  * @title UbiatarPlayVault
+ * @dev A token holder contract that allows the release of tokens to the UbiatarPlay Wallet.
  *
  * @version 1.0
  * @author Validity Labs AG <info@validitylabs.org>
@@ -40,6 +41,12 @@ contract UbiatarPlayVault {
     uint256 public start;
     uint256 public released;
 
+    /**
+     * @dev Constructor.
+     * @param _ubiatarPlayWallet The address that will receive the vested tokens.
+     * @param _token The UAC Token, which is being vested.
+     * @param _start The start time from which each release time will be calculated.
+     */
     function UbiatarPlayVault(
         address _ubiatarPlayWallet,
         address _token,
@@ -52,6 +59,9 @@ contract UbiatarPlayVault {
         start = _start;
     }
 
+    /**
+     * @dev Transfers vested tokens to ubiatarPlayWallet.
+     */
     function release() public {
         uint256 unreleased = releasableAmount();
         require(unreleased > 0);
@@ -61,10 +71,16 @@ contract UbiatarPlayVault {
         token.safeTransfer(ubiatarPlayWallet, unreleased);
     }
 
+    /**
+     * @dev Calculates the amount that has already vested but hasn't been released yet.
+     */
     function releasableAmount() public view returns (uint256) {
         return vestedAmount().sub(released);
     }
 
+    /**
+     * @dev Calculates the amount that has already vested.
+     */
     function vestedAmount() public view returns (uint256) {
         uint256 vested = 0;
 

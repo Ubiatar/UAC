@@ -19,6 +19,14 @@ contract Reservation is CrowdsaleBase {
 
     UacCrowdsale crowdsale;
 
+    /**
+     * @dev Constructor.
+     * @notice Unsold tokens should add up to the crowdsale hard cap.
+     * @param _crowdsale The address of the crowdsale contract.
+     * @param _wallet The address where funds should be transferred.
+     * @param _kycSigners Array of the signers addresses required by the KYCBase constructor, provided by Eidoo.
+     * See https://github.com/eidoo/icoengine
+     */
     function Reservation(
         address _crowdsale,
         address _wallet,
@@ -30,10 +38,21 @@ contract Reservation is CrowdsaleBase {
         crowdsale = UacCrowdsale(_crowdsale);
     }
 
+    /**
+     * @dev Implements the price function from EidooEngineInterface.
+     * @notice Calculates the price as tokens/ether based on the corresponding bonus.
+     * @return Price as tokens/ether.
+     */
     function price() public view returns (uint256) {
         return tokenPerEth.mul(BONUS).div(1e2);
     }
 
+    /**
+     * @dev Fires the mintReservationTokens function on the crowdsale contract to mint the tokens being sold during the reservation phase.
+     * This function is called by the releaseTokensTo function, as part of the KYCBase implementation.
+     * @param to The address that will receive the minted tokens.
+     * @param amount The amount of tokens to mint.
+     */
     function mintTokens(address to, uint256 amount) private {
         crowdsale.mintReservationTokens(to, amount);
     }

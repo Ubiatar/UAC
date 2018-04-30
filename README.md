@@ -1,5 +1,86 @@
 # Ubiatar ICO
 
+## Token
+* Basic ERC20 token features.
+* Mintable (by corresponding crowdsale contract only).
+* Pausable by owner.
+* Name: “Ubiatar Coin”.
+* Symbol: “UAC”.
+* Decimals: 18.
+* Reclaimable token: allows the token contract to recover any ERC20 token received by
+transferring the balance to the contract owner.
+
+## Crowdsale
+* Start time: Epoch timestamp: 1525856400 (9 May 2018 09:00:00 GMT).
+* End time: Epoch timestamp: 1528448400 (8 June 2018 09:00:00 GMT).
+* Price: USD 2 per token.
+* Hard cap: 15.000.000 UAC tokens.
+* Pausable: owner is able to pause (and unpause) the crowdsale in case of an
+emergency. No tokens can be minted when paused.
+* Reclaimable token: allows the crowdsale contract to recover any ERC20 token received
+by transferring the balance to the contract owner.
+* Paused until ICO end epoch time.
+* It should be possible to buy tokens for a specific address.
+* Controlled: once the ICO has finished, it may not be possible to arbitrarily issue new
+tokens.
+* Tokens issued simultaneously with the reception of ether.
+
+* Discounts on price:
+    * 8% until first 3 hours.
+    * 6% until first 12 hour.
+    * 4% until first 42 hours.
+* Implements Eiddo interface:
+https://github.com/eidoo/icoengine/blob/master/contracts/ICOEngineInterface.sol
+* KYC implementation, based on
+https://github.com/eidoo/icoengine/blob/master/contracts/KYCBase.sol
+
+## Token allocation
+* Pre-sale
+    * Already finished.
+    * List of Presale investors wallet with UAC amount.
+    * 17.584.778,551358900100698693 tokens.
+    * 1⁄3 tokens unlocked 7 days after the end of ICO.
+    * Continuous vesting of remaining 2⁄3 tokens: starts 97 days after the end of ICO
+    and ends 180 days later.
+
+* ICO
+    * 15.000.000 tokens.
+
+* Founders
+    * 12.000.000 tokens assigned to a unique wallet address.
+    * Continuous vesting: starts 12 months after the end of ICO and ends 12 months
+    later.
+
+* UbiatarPlay
+    * 50.500.000 tokens assigned to a unique wallet address.
+    * Unlocked in this way (starting from the end of ICO):
+        * 2.000.000 UAC after 3 month
+        * 4.000.000 UAC after 6 month
+        * 6.000.000 UAC after 9 month
+        * 8.000.000 UAC after 12 month
+        * 10.000.000 UAC after 18 month
+        * 20.500.000 UAC after 24 months
+
+* Advisors
+    * Total of 4.915.221,448641099899301307 tokens (the sum of
+    advisors plus presale is 23,5 million tokens).
+    * To be unlocked immediately after ICO on a specific address (no vesting).
+
+## Reservation contract
+* Start time: Epoch timestamp: 1525683600 (7 May 2018 09:00:00 GMT).
+* End time: Epoch timestamp: 1525856400 (9 May 2018 09:00:00 GMT).
+* Hard cap: 7.500.000 tokens (part of the ICO’s 15.000.000 hard cap).
+* Price: USD 2 per token.
+* Bonus: 10%.
+* Pausable: owner is able to pause (and unpause) the crowdsale in case of an
+emergency. No tokens can be minted when paused.
+* Reclaimable token: allows the crowdsale contract to recover any ERC20 token received
+by transferring the balance to the contract owner.
+* Implements Eidoo interface:
+https://github.com/eidoo/icoengine/blob/master/contracts/ICOEngineInterface.sol.
+* KYC implementation, based on
+https://github.com/eidoo/icoengine/blob/master/contracts/KYCBase.sol
+
 ## Requirements
 The server side scripts requires NodeJS 8 to work properly.
 Go to [NVM](https://github.com/creationix/nvm) and follow the installation description.

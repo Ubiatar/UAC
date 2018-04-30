@@ -21,32 +21,51 @@ contract UacCrowdsale is CrowdsaleBase {
     uint256 public constant END_TIME = 1528448400;                       // 8 June 2018 09:00:00 GMT
     uint256 public constant PRESALE_VAULT_START = END_TIME + 7 days;
     uint256 public constant PRESALE_CAP = 17584778551358900100698693;
-    uint256 public constant TOTAL_MAX_CAP = 15e6 * 1e18;
+    uint256 public constant TOTAL_MAX_CAP = 15e6 * 1e18;                // Reservation plus main sale tokens
     uint256 public constant CROWDSALE_CAP = 7.5e6 * 1e18;
     uint256 public constant FOUNDERS_CAP = 12e6 * 1e18;
     uint256 public constant UBIATARPLAY_CAP = 50.5e6 * 1e18;
     uint256 public constant ADVISORS_CAP = 491522144864109;
+
+    // Eidoo interface requires price as tokens/ether, therefore the discounts are presented as bonus tokens.
     uint256 public constant BONUS_TIER1 = 108;                           // 8% during first 3 hours
     uint256 public constant BONUS_TIER2 = 106;                           // 6% during next 9 hours
     uint256 public constant BONUS_TIER3 = 104;                           // 4% during next 30 hours
     uint256 public constant BONUS_DURATION_1 = 3 hours;
     uint256 public constant BONUS_DURATION_2 = 12 hours;
     uint256 public constant BONUS_DURATION_3 = 42 hours;
+
     uint256 public constant FOUNDERS_VESTING_CLIFF = 1 years;
     uint256 public constant FOUNDERS_VESTING_DURATION = 2 years;
 
-    TokenVesting public foundersVault;
-    UacToken public token;
     Reservation public reservation;
+
+    // Vesting contracts.
+    TokenVesting public foundersVault;
     UbiatarPlayVault public ubiatarPlayVault;
     PresaleTokenVault public presaleTokenVault;
+
+    // Vesting wallets.
     address public foundersWallet;
     address public advisorsWallet;
     address public ubiatarPlayWallet;
+
     address public wallet;
 
+    UacToken public token;
+
+    // Lets owner manually end crowdsale.
     bool public didOwnerEndCrowdsale;
 
+    /**
+     * @dev Constructor.
+     * @param _foundersWallet address Wallet holding founders tokens.
+     * @param _advisorsWallet address Wallet holding advisors tokens.
+     * @param _ubiatarPlayWallet address Wallet holding ubiatarPlay tokens.
+     * @param _wallet The address where funds should be transferred.
+     * @param _kycSigners Array of the signers addresses required by the KYCBase constructor, provided by Eidoo.
+     * See https://github.com/eidoo/icoengine
+     */
     function UacCrowdsale(
         address _foundersWallet,
         address _advisorsWallet,
@@ -66,17 +85,22 @@ contract UacCrowdsale is CrowdsaleBase {
         reservation.transferOwnership(owner);
         ubiatarPlayVault = new UbiatarPlayVault(ubiatarPlayWallet, address(token), END_TIME);
 
-        // Founders vault contract and mint contract's tokens
+        // Create founders vault contract and mint contract's tokens.
         foundersVault = new TokenVesting(foundersWallet, END_TIME, FOUNDERS_VESTING_CLIFF, FOUNDERS_VESTING_DURATION, false);
         mintTokens(address(foundersVault), FOUNDERS_CAP);
 
-        // Mint advisors' tokens
+        // Mint advisors' tokens.
         mintTokens(advisorsWallet, ADVISORS_CAP);
 
-        // Mint UbiatarPlay tokens
+        // Mint UbiatarPlay tokens.
         mintTokens(address(ubiatarPlayVault), UBIATARPLAY_CAP);
     }
 
+    /**
+     * @dev Creates the presale vault contract.
+     * @param beneficiaries Array of the presale investors addresses to whom vested tokens are transferred.
+     * @param balances Array of token amount per beneficiary.
+     */
     function createPresaleTokenVault(address[] beneficiaries, uint256[] balances) public onlyOwner {
         require(presaleTokenVault == address(0));
         presaleTokenVault = new PresaleTokenVault(beneficiaries, balances, PRESALE_VAULT_START, address(token));
@@ -90,6 +114,11 @@ contract UacCrowdsale is CrowdsaleBase {
         token.mint(presaleTokenVault, totalPresaleBalance);
     }
 
+    /**
+     * @dev Implements the price function from EidooEngineInterface.
+     * @notice Calculates the price as tokens/ether based on the corresponding bonus bracket.
+     * @return Price as tokens/ether.
+     */
     function price() public view returns (uint256 _price) {
         if (block.timestamp <= start.add(BONUS_DURATION_1)) {
             return tokenPerEth.mul(BONUS_TIER1).div(1e2);
@@ -101,6 +130,13 @@ contract UacCrowdsale is CrowdsaleBase {
         return tokenPerEth;
     }
 
+    /**
+     * @dev Mints tokens being sold during the reservation phase, as part of the implementation of the releaseTokensTo function
+     * from the KYCBase contract.
+     * Also, updates tokensSold and availableTokens in the crowdsale contract.
+     * @param to The address that will receive the minted tokens.
+     * @param amount The amount of tokens to mint.
+     */
     function mintReservationTokens(address to, uint256 amount) public {
         require(msg.sender == address(reservation));
         tokensSold = tokensSold.add(amount);
@@ -108,15 +144,27 @@ contract UacCrowdsale is CrowdsaleBase {
         mintTokens(to, amount);
     }
 
+    /**
+     * @dev Mints tokens being sold during the crowdsale phase as part of the implementation of releaseTokensTo function
+     * from the KYCBase contract.
+     * @param to The address that will receive the minted tokens.
+     * @param amount The amount of tokens to mint.
+     */
     function mintTokens(address to, uint256 amount) private {
         token.mint(to, amount);
     }
 
+    /**
+     * @dev Allows the owner to close the crowdsale manually before the end time.
+     */
     function closeCrowdsale() public onlyOwner {
         require(block.timestamp >= START_TIME && block.timestamp < END_TIME);
         didOwnerEndCrowdsale = true;
     }
 
+    /**
+     * @dev Allows the owner to unpause tokens, stop minting and transfer ownership of the token contract.
+     */
     function finalise() public onlyOwner {
         require(didOwnerEndCrowdsale || block.timestamp > end || capReached);
         token.finishMinting();

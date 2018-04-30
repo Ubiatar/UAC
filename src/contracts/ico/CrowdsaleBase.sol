@@ -1,5 +1,6 @@
 /**
  * @title CrowdsaleBase
+ * @dev Base crowdsale contract to be inherited by the UacCrowdsale and Reservation contracts.
  *
  * @version 1.0
  * @author Validity Labs AG <info@validitylabs.org>
@@ -29,6 +30,15 @@ contract CrowdsaleBase is Pausable, CanReclaimToken, ICOEngineInterface, KYCBase
     uint256 public weiRaised;
     uint256 public tokensSold;
 
+    /**
+     * @dev Constructor.
+     * @param _start The start time of the sale.
+     * @param _end The end time of the sale.
+     * @param _cap The maximum amount of tokens to be sold during the sale.
+     * @param _wallet The address where funds should be transferred.
+     * @param _kycSigners Array of the signers addresses required by the KYCBase constructor, provided by Eidoo.
+     * See https://github.com/eidoo/icoengine
+     */
     function CrowdsaleBase(
         uint256 _start,
         uint256 _end,
@@ -50,7 +60,10 @@ contract CrowdsaleBase is Pausable, CanReclaimToken, ICOEngineInterface, KYCBase
         availableTokens = _cap;
     }
 
-    // ICOEngineInterface
+    /**
+     * @dev Implements the ICOEngineInterface.
+     * @return False if the ico is not started, true if the ico is started and running, true if the ico is completed.
+     */
     function started() public view returns(bool) {
         if (block.timestamp >= start) {
             return true;
@@ -59,7 +72,10 @@ contract CrowdsaleBase is Pausable, CanReclaimToken, ICOEngineInterface, KYCBase
         }
     }
 
-    // ICOEngineInterface
+    /**
+     * @dev Implements the ICOEngineInterface.
+     * @return False if the ico is not started, false if the ico is started and running, true if the ico is completed.
+     */
     function ended() public view returns(bool) {
         if (block.timestamp >= end) {
             return true;
@@ -68,34 +84,53 @@ contract CrowdsaleBase is Pausable, CanReclaimToken, ICOEngineInterface, KYCBase
         }
     }
 
-    // ICOEngineInterface
+    /**
+     * @dev Implements the ICOEngineInterface.
+     * @return Timestamp of the ico start time.
+     */
     function startTime() public view returns(uint) {
         return start;
     }
 
-    // ICOEngineInterface
+    /**
+     * @dev Implements the ICOEngineInterface.
+     * @return Timestamp of the ico end time.
+     */
     function endTime() public view returns(uint) {
         return end;
     }
 
-    // ICOEngineInterface
+    /**
+     * @dev Implements the ICOEngineInterface.
+     * @return The total number of the tokens available for the sale, must not change when the ico is started.
+     */
     function totalTokens() public view returns(uint) {
         return cap;
     }
 
-    // ICOEngineInterface
+    /**
+     * @dev Implements the ICOEngineInterface.
+     * @return The number of the tokens available for the ico. At the moment the ico starts it must be equal to totalTokens(),
+     * then it will decrease.
+     */
     function remainingTokens() public view returns(uint) {
         return availableTokens;
     }
 
-    // KYCBase
+    /**
+     * @dev Implements the KYCBase senderAllowedFor function to enable a sender to buy tokens for a different address.
+     * @return true.
+     */
     function senderAllowedFor(address buyer) internal view returns(bool) {
         require(buyer != address(0));
 
         return true;
     }
 
-    // KYCBase
+    /**
+     * @dev Implements the KYCBase releaseTokensTo function to mint tokens for an investor. Called after the KYC process has passed.
+     * @return A bollean that indicates if the operation was successful.
+     */
     function releaseTokensTo(address buyer) internal returns(bool) {
         require(validPurchase());
 
@@ -123,10 +158,18 @@ contract CrowdsaleBase is Pausable, CanReclaimToken, ICOEngineInterface, KYCBase
         return true;
     }
 
+    /**
+     * @dev Fired by the releaseTokensTo function after minting tokens, to forward the raised wei to the address that collects funds.
+     * @param _weiAmount Amount of wei send by the investor.
+     */
     function forwardFunds(uint256 _weiAmount) internal {
         wallet.transfer(_weiAmount);
     }
 
+    /**
+     * @dev Validates an incoming purchase. Required statements revert state when conditions are not met.
+     * @return true If the transaction can buy tokens.
+     */
     function validPurchase() internal view returns (bool) {
         require(!paused && !capReached);
         require(block.timestamp >= start && block.timestamp <= end);
@@ -134,6 +177,11 @@ contract CrowdsaleBase is Pausable, CanReclaimToken, ICOEngineInterface, KYCBase
         return true;
     }
 
+    /**
+    * @dev Abstract function to mint tokens, to be implemented in the Crowdsale and Reservation contracts.
+    * @param to The address that will receive the minted tokens.
+    * @param amount The amount of tokens to mint.
+    */
     function mintTokens(address to, uint256 amount) private;
 }
 
