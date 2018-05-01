@@ -25,7 +25,7 @@ contract UacCrowdsale is CrowdsaleBase {
     uint256 public constant CROWDSALE_CAP = 7.5e6 * 1e18;
     uint256 public constant FOUNDERS_CAP = 12e6 * 1e18;
     uint256 public constant UBIATARPLAY_CAP = 50.5e6 * 1e18;
-    uint256 public constant ADVISORS_CAP = 491522144864109;
+    uint256 public constant ADVISORS_CAP = 4915221448641099899301307;
 
     // Eidoo interface requires price as tokens/ether, therefore the discounts are presented as bonus tokens.
     uint256 public constant BONUS_TIER1 = 108;                           // 8% during first 3 hours
@@ -54,6 +54,8 @@ contract UacCrowdsale is CrowdsaleBase {
 
     UacToken public token;
 
+    address[] public kycSigners;
+
     // Lets owner manually end crowdsale.
     bool public didOwnerEndCrowdsale;
 
@@ -80,19 +82,27 @@ contract UacCrowdsale is CrowdsaleBase {
         advisorsWallet = _advisorsWallet;
         ubiatarPlayWallet = _ubiatarPlayWallet;
         wallet = _wallet;
+        kycSigners = _kycSigners;
         token = new UacToken();
-        reservation = new Reservation(address(this), _wallet, _kycSigners);
-        reservation.transferOwnership(owner);
-        ubiatarPlayVault = new UbiatarPlayVault(ubiatarPlayWallet, address(token), END_TIME);
-
-        // Create founders vault contract and mint contract's tokens.
-        foundersVault = new TokenVesting(foundersWallet, END_TIME, FOUNDERS_VESTING_CLIFF, FOUNDERS_VESTING_DURATION, false);
-        mintTokens(address(foundersVault), FOUNDERS_CAP);
 
         // Mint advisors' tokens.
         mintTokens(advisorsWallet, ADVISORS_CAP);
+    }
 
-        // Mint UbiatarPlay tokens.
+    function createReservation() public onlyOwner {
+        require(reservation == address(0));
+        reservation = new Reservation(address(this), wallet, kycSigners);
+        reservation.transferOwnership(owner);
+    }
+
+    function createFoundersVault() public onlyOwner {
+        foundersVault = new TokenVesting(foundersWallet, END_TIME, FOUNDERS_VESTING_CLIFF, FOUNDERS_VESTING_DURATION, false);
+        mintTokens(address(foundersVault), FOUNDERS_CAP);
+    }
+
+    function createUbiatarPlayVault() public onlyOwner {
+        require(ubiatarPlayVault == address(0));
+        ubiatarPlayVault = new UbiatarPlayVault(ubiatarPlayWallet, address(token), END_TIME);
         mintTokens(address(ubiatarPlayVault), UBIATARPLAY_CAP);
     }
 
@@ -175,6 +185,5 @@ contract UacCrowdsale is CrowdsaleBase {
         // We transfer the ownership so the owner of the crowdsale is also the owner of the token.
         token.transferOwnership(owner);
     }
-
 }
 

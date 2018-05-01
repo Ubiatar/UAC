@@ -77,7 +77,7 @@ const CROWDSALE_END_TIME = 1528448400;                                      // 8
 const CROWDSALE_CAP = new BigNumber(15e6 * 1e18);                           // reservation and ico tokens
 const FOUNDERS_CAP = new BigNumber(12e6 * 1e18);
 const UBIATARPLAY_CAP = new BigNumber(50.5e6 * 1e18);
-const ADVISORS_CAP = new BigNumber(491522144864109);
+const ADVISORS_CAP = new BigNumber('4915221448641099899301307');
 const CROWDSALE_BONUS_TIER1 = 108;                                          // 8% during first 3 hours
 const CROWDSALE_BONUS_TIER2 = 106;                                          // 6% during next 9 hours
 const CROWDSALE_BONUS_TIER3 = 104;                                          // 4% during next 30 hours
@@ -89,8 +89,6 @@ const FOUNDERS_VESTING_DURATION = (2 * 365 * 24 * 60 * 60);                 // 2
 const PRICE1 = TOKEN_PER_ETHER * CROWDSALE_BONUS_TIER1 / 100;               // 270 UAC tokens per ether
 const PRICE2 = TOKEN_PER_ETHER * CROWDSALE_BONUS_TIER2 / 100;               // 265 UAC tokens per ether
 const PRICE3 = TOKEN_PER_ETHER * CROWDSALE_BONUS_TIER3 / 100;               // 260 UAC tokens per ether
-
-const DEPLOYED_TOTAL_SUPPLY = FOUNDERS_CAP.plus(UBIATARPLAY_CAP).plus(ADVISORS_CAP);  // tokens minted on deployment
 
 // Reservation phase: activeInvestor
 const INVESTOR_WEI1 = 2e22;
@@ -140,6 +138,7 @@ contract('UacCrowdsale', (accounts) => {
 
     let uacCrowdsaleInstance;
     let uacTokenInstance;
+    let reservationAddress;
     let reservationInstance;
     let ubiatarPlayVaultAddress;
     let ubiatarPlayVaultInstance;
@@ -153,12 +152,6 @@ contract('UacCrowdsale', (accounts) => {
         uacCrowdsaleInstance = await UacCrowdsale.deployed();
         const uacTokenAddress = await uacCrowdsaleInstance.token();
         uacTokenInstance = await UacToken.at(uacTokenAddress);
-        const reservationAddress = await uacCrowdsaleInstance.reservation();
-        reservationInstance = await Reservation.at(reservationAddress);
-        ubiatarPlayVaultAddress = await uacCrowdsaleInstance.ubiatarPlayVault();
-        ubiatarPlayVaultInstance = await UbiatarPlayVault.at(ubiatarPlayVaultAddress);
-        foundersVaultAddress = await uacCrowdsaleInstance.foundersVault();
-        foundersVaultInstance = await TokenVesting.at(foundersVaultAddress);
     });
 
     /**
@@ -189,7 +182,6 @@ contract('UacCrowdsale', (accounts) => {
         const foundersVestingCliff = await uacCrowdsaleInstance.FOUNDERS_VESTING_CLIFF();
         const foundersVestingDuration = await uacCrowdsaleInstance.FOUNDERS_VESTING_DURATION();
         const ownerAccountZero = await uacCrowdsaleInstance.owner();
-        const totalSupply = await uacTokenInstance.totalSupply();
 
         _wallet.should.equal(wallet);
         _foundersWallet.should.equal(foundersWallet);
@@ -213,20 +205,14 @@ contract('UacCrowdsale', (accounts) => {
         foundersVestingCliff.should.be.bignumber.equal(FOUNDERS_VESTING_ClIFF);
         foundersVestingDuration.should.be.bignumber.equal(FOUNDERS_VESTING_DURATION);
         ownerAccountZero.should.equal(owner);
-        totalSupply.should.be.bignumber.equal(foundersCap.plus(ubiatarPlayCap).plus(advisorsCap));
-    });
-
-    it('should instantiate the presaleTokenVault correctly', async () => {
-        await uacCrowdsaleInstance.createPresaleTokenVault([presaleInvestor1, presaleInvestor2], [PRESALE_INVESTOR1_AMOUNT, PRESALE_INVESTOR2_AMOUNT]);
-
-        presaleTokenVaultAddress = await uacCrowdsaleInstance.presaleTokenVault();
-        presaleTokenVaultInstance = await PresaleTokenVault.at(presaleTokenVaultAddress);
-        const presaleTokenVaultBalance = await uacTokenInstance.balanceOf(presaleTokenVaultAddress);
-
-        presaleTokenVaultBalance.should.be.bignumber.equal(PRESALE_INVESTOR1_AMOUNT + PRESALE_INVESTOR2_AMOUNT);
     });
 
     it('should instantiate the reservation contract correctly', async () => {
+        await uacCrowdsaleInstance.createReservation();
+
+        reservationAddress = await uacCrowdsaleInstance.reservation();
+        reservationInstance = await Reservation.at(reservationAddress);
+
         const started = await reservationInstance.started();
         const ended = await reservationInstance.ended();
         const startTime = await reservationInstance.startTime();
@@ -246,8 +232,38 @@ contract('UacCrowdsale', (accounts) => {
         bonus.should.be.bignumber.equal(RESERVATION_BONUS);
     });
 
+    it('should instantiate the foundersVault correctly', async () => {
+        await uacCrowdsaleInstance.createFoundersVault();
+
+        foundersVaultAddress = await uacCrowdsaleInstance.foundersVault();
+        foundersVaultInstance = await TokenVesting.at(foundersVaultAddress);
+        const foundersVaultBalance = await uacTokenInstance.balanceOf(foundersVaultAddress);
+
+        foundersVaultBalance.should.be.bignumber.equal(FOUNDERS_CAP);
+    });
+
+    it('should instantiate the ubiatarPlayVault correctly', async () => {
+        await uacCrowdsaleInstance.createUbiatarPlayVault();
+
+        ubiatarPlayVaultAddress = await uacCrowdsaleInstance.ubiatarPlayVault();
+        ubiatarPlayVaultInstance = await UbiatarPlayVault.at(ubiatarPlayVaultAddress);
+        const ubiatarPlayVaultBalance = await uacTokenInstance.balanceOf(ubiatarPlayVaultAddress);
+
+        ubiatarPlayVaultBalance.should.be.bignumber.equal(UBIATARPLAY_CAP);
+    });
+
+    it('should instantiate the presaleTokenVault correctly', async () => {
+        await uacCrowdsaleInstance.createPresaleTokenVault([presaleInvestor1, presaleInvestor2], [PRESALE_INVESTOR1_AMOUNT, PRESALE_INVESTOR2_AMOUNT]);
+
+        presaleTokenVaultAddress = await uacCrowdsaleInstance.presaleTokenVault();
+        presaleTokenVaultInstance = await PresaleTokenVault.at(presaleTokenVaultAddress);
+        const presaleTokenVaultBalance = await uacTokenInstance.balanceOf(presaleTokenVaultAddress);
+
+        presaleTokenVaultBalance.should.be.bignumber.equal(PRESALE_INVESTOR1_AMOUNT + PRESALE_INVESTOR2_AMOUNT);
+    });
+
     it('should fail, buyTokens method can not be called before reservation phase starts', async () => {
-        const d = getKycData(activeInvestor, 0, reservationInstance.address, SIGNER_PK);
+        const d = getKycData(activeInvestor, 0, reservationAddress, SIGNER_PK);
         await expectThrow(reservationInstance.buyTokens(d.id, d.max, d.v, d.r, d.s, {from: activeInvestor, value: MAX_AMOUNT}));
     });
 
@@ -266,18 +282,31 @@ contract('UacCrowdsale', (accounts) => {
         assert.isTrue(started);
     });
 
-    it('should allow investment when calling buyToken after reservation phase starts', async () => {
+    it('should calculate the token total supply correctly', async () => {
+        const presaleTokenVaultBalance = await uacTokenInstance.balanceOf(presaleTokenVaultAddress);
+        const foundersVaultBalance = await uacTokenInstance.balanceOf(foundersVaultAddress);
+        const ubiatarPlayVaultBalance = await uacTokenInstance.balanceOf(ubiatarPlayVaultAddress);
+        const advisorsBalance = await uacTokenInstance.balanceOf(advisorsWallet);
+        const totalSupply = await uacTokenInstance.totalSupply();
+
+        totalSupply.should.be.bignumber.equal(presaleTokenVaultBalance.plus(foundersVaultBalance).plus(ubiatarPlayVaultBalance).plus(advisorsBalance));
+    });
+
+    it('should allow investment when calling buyToken after reservation phase starts and update totalSupply', async () => {
         const activeInvestorBalance1 = await uacTokenInstance.balanceOf(activeInvestor);
+        const totalSupply1 = await uacTokenInstance.totalSupply();
 
         activeInvestorBalance1.should.be.bignumber.equal(0);
 
-        const d = getKycDataMockMaxAmount(activeInvestor, 0, reservationInstance.address, SIGNER_PK);
+        const d = getKycDataMockMaxAmount(activeInvestor, 0, reservationAddress, SIGNER_PK);
 
         await reservationInstance.buyTokens(d.id, d.max, d.v, d.r, d.s, {from: activeInvestor, value: INVESTOR_WEI1});
 
         const activeInvestorBalance2 = await uacTokenInstance.balanceOf(activeInvestor);
+        const totalSupply2 = await uacTokenInstance.totalSupply();
 
         activeInvestorBalance2.should.be.bignumber.equal(INVESTOR_TOKEN_AMOUNT1);
+        totalSupply2.should.be.bignumber.equal(totalSupply1.plus(activeInvestorBalance2));
     });
 
     it('should calculate remaining tokens correctly', async () => {
@@ -294,7 +323,7 @@ contract('UacCrowdsale', (accounts) => {
 
         const paused = await reservationInstance.paused();
         const activeInvestorBalance1 = await uacTokenInstance.balanceOf(activeInvestor);
-        const d = getKycData(activeInvestor, 0, reservationInstance.address, SIGNER_PK);
+        const d = getKycData(activeInvestor, 0, reservationAddress, SIGNER_PK);
 
         await expectThrow(reservationInstance.buyTokens(d.id, d.max, d.v, d.r, d.s, {from: activeInvestor, value: MAX_AMOUNT}));
 
@@ -315,7 +344,7 @@ contract('UacCrowdsale', (accounts) => {
     });
 
     it('should set capReached to true and remaining tokens to zero', async () => {
-        const d = getKycDataMockMaxAmount(activeInvestor, 0, reservationInstance.address, SIGNER_PK);
+        const d = getKycDataMockMaxAmount(activeInvestor, 0, reservationAddress, SIGNER_PK);
         await reservationInstance.buyTokensFor(activeInvestor, d.id, d.max, d.v, d.r, d.s, {from: activeInvestor1, value: INVESTOR_WEI2});
         const capReached = await reservationInstance.capReached();
         const remainingTokens = await reservationInstance.remainingTokens();
@@ -326,7 +355,7 @@ contract('UacCrowdsale', (accounts) => {
 
     it('should fail, is not possible to buy tokens after the reservation cap has been reached', async () => {
         const activeInvestorBalance1 = await uacTokenInstance.balanceOf(activeInvestor);
-        const d = getKycData(activeInvestor, 0, reservationInstance.address, SIGNER_PK);
+        const d = getKycData(activeInvestor, 0, reservationAddress, SIGNER_PK);
 
         await expectThrow(reservationInstance.buyTokens(d.id, d.max, d.v, d.r, d.s, {from: activeInvestor, value: INVESTOR_WEI2}));
 
@@ -430,15 +459,6 @@ contract('UacCrowdsale', (accounts) => {
 
         price.should.be.bignumber.equal(PRICE3);
         activeInvestor2Balance.should.be.bignumber.equal(INVESTOR2_TOKEN_AMOUNT1 + INVESTOR2_TOKEN_AMOUNT2);
-    });
-
-    it('should calculate the total supply correctly', async () => {
-        const totalSupply = await uacTokenInstance.totalSupply();
-        const activeInvestorBalance = await uacTokenInstance.balanceOf(activeInvestor);
-        const activeInvestor1Balance = await uacTokenInstance.balanceOf(activeInvestor1);
-        const activeInvestor2Balance = await uacTokenInstance.balanceOf(activeInvestor2);
-
-        totalSupply.should.be.bignumber.equal(DEPLOYED_TOTAL_SUPPLY.plus(activeInvestorBalance).plus(activeInvestor1Balance).plus(activeInvestor2Balance).plus(PRESALE_INVESTOR1_AMOUNT + PRESALE_INVESTOR2_AMOUNT));
     });
 
     it('should increase time to after bonus period)', async () => {
