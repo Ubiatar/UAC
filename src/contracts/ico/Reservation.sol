@@ -17,24 +17,26 @@ contract Reservation is CrowdsaleBase {
     uint256 public constant RESERVATION_CAP = 7.5e6 * 1e18;
     uint256 public constant BONUS = 110;                                 // 10% bonus
 
-    UacCrowdsale crowdsale;
+    UacCrowdsale public crowdsale;
 
     /**
      * @dev Constructor.
      * @notice Unsold tokens should add up to the crowdsale hard cap.
-     * @param _crowdsale The address of the crowdsale contract.
      * @param _wallet The address where funds should be transferred.
      * @param _kycSigners Array of the signers addresses required by the KYCBase constructor, provided by Eidoo.
      * See https://github.com/eidoo/icoengine
      */
     function Reservation(
-        address _crowdsale,
         address _wallet,
         address[] _kycSigners
     )
         public
         CrowdsaleBase(START_TIME, END_TIME, RESERVATION_CAP, _wallet, _kycSigners)
     {
+    }
+
+    function setCrowdsale(address _crowdsale) public {
+        require(crowdsale == address(0));
         crowdsale = UacCrowdsale(_crowdsale);
     }
 

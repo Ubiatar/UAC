@@ -38,14 +38,8 @@ contract PresaleTokenVault {
     // key: investor address; value: index in investments array.
     mapping(address => uint256) public investorLUT;
 
-    /**
-     * @dev Constructor.
-     * @param beneficiaries Array of addresses of the beneficiaries to whom vested tokens are transferred.
-     * @param balances Array of token amounts to be transferred per beneficiary.
-     * @param startTime Start time from which the cliff will be calculated. This is seven days after ICO's end time.
-     * @param _token The UAC Token, which is being vested.
-     */
-    function PresaleTokenVault(address[] beneficiaries, uint256[] balances, uint256 startTime, address _token) public {
+    function init(address[] beneficiaries, uint256[] balances, uint256 startTime, address _token) public {
+        require(token == address(0));
         require(beneficiaries.length == balances.length);
 
         start = startTime;

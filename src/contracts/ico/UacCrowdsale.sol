@@ -41,9 +41,9 @@ contract UacCrowdsale is CrowdsaleBase {
     Reservation public reservation;
 
     // Vesting contracts.
+    PresaleTokenVault public presaleTokenVault;
     TokenVesting public foundersVault;
     UbiatarPlayVault public ubiatarPlayVault;
-    PresaleTokenVault public presaleTokenVault;
 
     // Vesting wallets.
     address public foundersWallet;
@@ -69,6 +69,9 @@ contract UacCrowdsale is CrowdsaleBase {
      * See https://github.com/eidoo/icoengine
      */
     function UacCrowdsale(
+        address _token,
+        address _reservation,
+        address _presaleTokenVault,
         address _foundersWallet,
         address _advisorsWallet,
         address _ubiatarPlayWallet,
@@ -78,31 +81,24 @@ contract UacCrowdsale is CrowdsaleBase {
         public
         CrowdsaleBase(START_TIME, END_TIME, TOTAL_MAX_CAP, _wallet, _kycSigners)
     {
+        token = UacToken(_token);
+        reservation = Reservation(_reservation);
+        presaleTokenVault = PresaleTokenVault(_presaleTokenVault);
         foundersWallet = _foundersWallet;
         advisorsWallet = _advisorsWallet;
         ubiatarPlayWallet = _ubiatarPlayWallet;
         wallet = _wallet;
         kycSigners = _kycSigners;
-        token = new UacToken();
-
-        // Mint advisors' tokens.
-        mintTokens(advisorsWallet, ADVISORS_CAP);
-    }
-
-    function createReservation() public onlyOwner {
-        require(reservation == address(0));
-        reservation = new Reservation(address(this), wallet, kycSigners);
-        reservation.transferOwnership(owner);
-    }
-
-    function createFoundersVault() public onlyOwner {
+        // Create founders vault contract
         foundersVault = new TokenVesting(foundersWallet, END_TIME, FOUNDERS_VESTING_CLIFF, FOUNDERS_VESTING_DURATION, false);
-        mintTokens(address(foundersVault), FOUNDERS_CAP);
+
+        // Create Ubiatar Play vault contract
+        ubiatarPlayVault = new UbiatarPlayVault(ubiatarPlayWallet, address(token), END_TIME);
     }
 
-    function createUbiatarPlayVault() public onlyOwner {
-        require(ubiatarPlayVault == address(0));
-        ubiatarPlayVault = new UbiatarPlayVault(ubiatarPlayWallet, address(token), END_TIME);
+    function mintPreAllocatedTokens() public onlyOwner {
+        mintTokens(address(foundersVault), FOUNDERS_CAP);
+        mintTokens(advisorsWallet, ADVISORS_CAP);
         mintTokens(address(ubiatarPlayVault), UBIATARPLAY_CAP);
     }
 
@@ -111,9 +107,14 @@ contract UacCrowdsale is CrowdsaleBase {
      * @param beneficiaries Array of the presale investors addresses to whom vested tokens are transferred.
      * @param balances Array of token amount per beneficiary.
      */
-    function createPresaleTokenVault(address[] beneficiaries, uint256[] balances) public onlyOwner {
+    function setPresaleTokenVault(address _presaleTokenVault, address[] beneficiaries, uint256[] balances) public onlyOwner {
+
+        // makes sure this function is only called once
         require(presaleTokenVault == address(0));
-        presaleTokenVault = new PresaleTokenVault(beneficiaries, balances, PRESALE_VAULT_START, address(token));
+
+        require(beneficiaries.length == balances.length);
+        presaleTokenVault = PresaleTokenVault(_presaleTokenVault);
+        presaleTokenVault.init(beneficiaries, balances, PRESALE_VAULT_START, token);
 
         uint256 totalPresaleBalance = 0;
         uint256 balancesLength = balances.length;
@@ -121,7 +122,7 @@ contract UacCrowdsale is CrowdsaleBase {
             totalPresaleBalance = totalPresaleBalance.add(balances[i]);
         }
 
-        token.mint(presaleTokenVault, totalPresaleBalance);
+        mintTokens(presaleTokenVault, totalPresaleBalance);
     }
 
     /**

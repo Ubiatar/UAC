@@ -207,9 +207,13 @@ contract('UacCrowdsale', (accounts) => {
         ownerAccountZero.should.equal(owner);
     });
 
-    it('should instantiate the reservation contract correctly', async () => {
-        await uacCrowdsaleInstance.createReservation();
+    it('should have token ownership', async () => {
+        uacTokenInstanceOwner = await uacTokenInstance.owner();
 
+        uacTokenInstanceOwner.should.equal(uacCrowdsaleInstance.address);
+    });
+
+    it('should instantiate the reservation contract correctly', async () => {
         reservationAddress = await uacCrowdsaleInstance.reservation();
         reservationInstance = await Reservation.at(reservationAddress);
 
@@ -233,8 +237,6 @@ contract('UacCrowdsale', (accounts) => {
     });
 
     it('should instantiate the foundersVault correctly', async () => {
-        await uacCrowdsaleInstance.createFoundersVault();
-
         foundersVaultAddress = await uacCrowdsaleInstance.foundersVault();
         foundersVaultInstance = await TokenVesting.at(foundersVaultAddress);
         const foundersVaultBalance = await uacTokenInstance.balanceOf(foundersVaultAddress);
@@ -243,8 +245,6 @@ contract('UacCrowdsale', (accounts) => {
     });
 
     it('should instantiate the ubiatarPlayVault correctly', async () => {
-        await uacCrowdsaleInstance.createUbiatarPlayVault();
-
         ubiatarPlayVaultAddress = await uacCrowdsaleInstance.ubiatarPlayVault();
         ubiatarPlayVaultInstance = await UbiatarPlayVault.at(ubiatarPlayVaultAddress);
         const ubiatarPlayVaultBalance = await uacTokenInstance.balanceOf(ubiatarPlayVaultAddress);
@@ -252,11 +252,11 @@ contract('UacCrowdsale', (accounts) => {
         ubiatarPlayVaultBalance.should.be.bignumber.equal(UBIATARPLAY_CAP);
     });
 
-    it('should instantiate the presaleTokenVault correctly', async () => {
-        await uacCrowdsaleInstance.createPresaleTokenVault([presaleInvestor1, presaleInvestor2], [PRESALE_INVESTOR1_AMOUNT, PRESALE_INVESTOR2_AMOUNT]);
-
+    it('should set the presaleTokenVault correctly', async () => {
         presaleTokenVaultAddress = await uacCrowdsaleInstance.presaleTokenVault();
         presaleTokenVaultInstance = await PresaleTokenVault.at(presaleTokenVaultAddress);
+
+        await uacCrowdsaleInstance.setPresaleTokenVault(presaleTokenVaultAddress, [presaleInvestor1, presaleInvestor2], [PRESALE_INVESTOR1_AMOUNT, PRESALE_INVESTOR2_AMOUNT]);
         const presaleTokenVaultBalance = await uacTokenInstance.balanceOf(presaleTokenVaultAddress);
 
         presaleTokenVaultBalance.should.be.bignumber.equal(PRESALE_INVESTOR1_AMOUNT + PRESALE_INVESTOR2_AMOUNT);
