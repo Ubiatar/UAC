@@ -54,8 +54,6 @@ contract UacCrowdsale is CrowdsaleBase {
 
     UacToken public token;
 
-    address[] public kycSigners;
-
     // Lets owner manually end crowdsale.
     bool public didOwnerEndCrowdsale;
 
@@ -88,7 +86,6 @@ contract UacCrowdsale is CrowdsaleBase {
         advisorsWallet = _advisorsWallet;
         ubiatarPlayWallet = _ubiatarPlayWallet;
         wallet = _wallet;
-        kycSigners = _kycSigners;
         // Create founders vault contract
         foundersVault = new TokenVesting(foundersWallet, END_TIME, FOUNDERS_VESTING_CLIFF, FOUNDERS_VESTING_DURATION, false);
 
@@ -107,13 +104,9 @@ contract UacCrowdsale is CrowdsaleBase {
      * @param beneficiaries Array of the presale investors addresses to whom vested tokens are transferred.
      * @param balances Array of token amount per beneficiary.
      */
-    function setPresaleTokenVault(address _presaleTokenVault, address[] beneficiaries, uint256[] balances) public onlyOwner {
-
-        // makes sure this function is only called once
-        require(presaleTokenVault == address(0));
-
+    function initPresaleTokenVault(address[] beneficiaries, uint256[] balances) public onlyOwner {
         require(beneficiaries.length == balances.length);
-        presaleTokenVault = PresaleTokenVault(_presaleTokenVault);
+
         presaleTokenVault.init(beneficiaries, balances, PRESALE_VAULT_START, token);
 
         uint256 totalPresaleBalance = 0;

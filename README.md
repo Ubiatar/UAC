@@ -1,5 +1,14 @@
 # Ubiatar ICO
 
+## Deployment
+1. Deploy UacToken and note the address
+2. Deploy Reservation and note the address
+3. Deploy PresaleTokenVault and note the address
+4. Deploy UacCrowdsale and pass the addresses of token, reservation and presale token vault addresses (and further parameters as per constructor definition)
+5. Set the crowdsale address in the reservation contract by calling `reservationInstance.setCrowdsale(uacCrowdsaleAddress)`
+6. Transfer ownership of the token to the crowdsale by calling `uacTokenInstance.transferOwnership(uacCrowdsaleAddress)`
+7. Call the function in the crowdsale that mints the pre-allocated tokens for founders, advisors and UbiatarPlay `uacCrowdsaleInstance.mintPreAllocatedTokens()`
+
 ## Token
 * Basic ERC20 token features.
 * Mintable (by corresponding crowdsale contract only).

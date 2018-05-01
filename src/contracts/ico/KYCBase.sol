@@ -56,6 +56,7 @@ contract KYCBase {
             KycVerified(signer, buyerAddress, buyerId, maxAmount);
             return releaseTokensTo(buyerAddress);
         }
+        return true;
     }
 
     // No payable fallback function, the tokens must be buyed using the functions buyTokens and buyTokensFor

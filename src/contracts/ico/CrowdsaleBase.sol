@@ -58,6 +58,7 @@ contract CrowdsaleBase is Pausable, CanReclaimToken, ICOEngineInterface, KYCBase
         wallet = _wallet;
         tokenPerEth = USD_PER_ETHER.div(USD_PER_TOKEN);
         availableTokens = _cap;
+        kycSigners = _kycSigners;
     }
 
     /**

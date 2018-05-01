@@ -182,6 +182,9 @@ contract('UacCrowdsale', (accounts) => {
         const foundersVestingCliff = await uacCrowdsaleInstance.FOUNDERS_VESTING_CLIFF();
         const foundersVestingDuration = await uacCrowdsaleInstance.FOUNDERS_VESTING_DURATION();
         const ownerAccountZero = await uacCrowdsaleInstance.owner();
+        const signer0 = await uacCrowdsaleInstance.kycSigners(0);
+
+        signer0.should.be.equal('0x627306090abaB3A6e1400e9345bC60c78a8BEf57'.toLowerCase());
 
         _wallet.should.equal(wallet);
         _foundersWallet.should.equal(foundersWallet);
@@ -208,7 +211,7 @@ contract('UacCrowdsale', (accounts) => {
     });
 
     it('should have token ownership', async () => {
-        uacTokenInstanceOwner = await uacTokenInstance.owner();
+        const uacTokenInstanceOwner = await uacTokenInstance.owner();
 
         uacTokenInstanceOwner.should.equal(uacCrowdsaleInstance.address);
     });
@@ -225,6 +228,11 @@ contract('UacCrowdsale', (accounts) => {
         const remainingTokens = await reservationInstance.remainingTokens();
         const price = await reservationInstance.price();
         const bonus = await reservationInstance.BONUS();
+        const signer0 = await reservationInstance.kycSigners(0);
+        const crowd = await reservationInstance.crowdsale();
+
+        signer0.should.be.equal('0x627306090abaB3A6e1400e9345bC60c78a8BEf57'.toLowerCase());
+
 
         assert.isFalse(started);
         assert.isFalse(ended);
@@ -252,11 +260,11 @@ contract('UacCrowdsale', (accounts) => {
         ubiatarPlayVaultBalance.should.be.bignumber.equal(UBIATARPLAY_CAP);
     });
 
-    it('should set the presaleTokenVault correctly', async () => {
+    it('should init the presaleTokenVault correctly', async () => {
         presaleTokenVaultAddress = await uacCrowdsaleInstance.presaleTokenVault();
         presaleTokenVaultInstance = await PresaleTokenVault.at(presaleTokenVaultAddress);
 
-        await uacCrowdsaleInstance.setPresaleTokenVault(presaleTokenVaultAddress, [presaleInvestor1, presaleInvestor2], [PRESALE_INVESTOR1_AMOUNT, PRESALE_INVESTOR2_AMOUNT]);
+        await uacCrowdsaleInstance.initPresaleTokenVault([presaleInvestor1, presaleInvestor2], [PRESALE_INVESTOR1_AMOUNT, PRESALE_INVESTOR2_AMOUNT]);
         const presaleTokenVaultBalance = await uacTokenInstance.balanceOf(presaleTokenVaultAddress);
 
         presaleTokenVaultBalance.should.be.bignumber.equal(PRESALE_INVESTOR1_AMOUNT + PRESALE_INVESTOR2_AMOUNT);
@@ -264,6 +272,7 @@ contract('UacCrowdsale', (accounts) => {
 
     it('should fail, buyTokens method can not be called before reservation phase starts', async () => {
         const d = getKycData(activeInvestor, 0, reservationAddress, SIGNER_PK);
+
         await expectThrow(reservationInstance.buyTokens(d.id, d.max, d.v, d.r, d.s, {from: activeInvestor, value: MAX_AMOUNT}));
     });
 
@@ -620,7 +629,6 @@ contract('UacCrowdsale', (accounts) => {
         const presaleInvestor2Balance2 = await uacTokenInstance.balanceOf(presaleInvestor2);
 
         assert.notEqual(presaleInvestor1Balance2, 0);
-        log.info(presaleInvestor1Balance2);
         presaleInvestor2Balance2.should.be.bignumber.equal(0);
         presaleInvestor1Balance2.plus(presaleTokenVaultBalance2).should.be.bignumber.equal(PRESALE_INVESTOR1_AMOUNT + PRESALE_INVESTOR2_AMOUNT);
     });

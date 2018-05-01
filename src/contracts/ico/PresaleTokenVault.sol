@@ -39,6 +39,7 @@ contract PresaleTokenVault {
     mapping(address => uint256) public investorLUT;
 
     function init(address[] beneficiaries, uint256[] balances, uint256 startTime, address _token) public {
+        // makes sure this function is only called once
         require(token == address(0));
         require(beneficiaries.length == balances.length);
 

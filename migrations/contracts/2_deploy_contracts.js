@@ -33,6 +33,7 @@ module.exports = async (deployer, network, accounts) => {                       
                                     return UacCrowdsale.deployed().then(async (uacCrowdsaleInstance) => {
                                         uacCrowdsaleAddress = uacCrowdsaleInstance.address;
                                         console.log('[ uacCrowdsaleInstance.address ]: ' + uacCrowdsaleAddress);
+                                        await reservationInstance.setCrowdsale(uacCrowdsaleAddress);
                                         await uacTokenInstance.transferOwnership(uacCrowdsaleAddress);
                                         await uacCrowdsaleInstance.mintPreAllocatedTokens();
                                     });
