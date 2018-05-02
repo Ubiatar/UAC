@@ -8,6 +8,7 @@
 5. Set the crowdsale address in the reservation contract by calling `reservationInstance.setCrowdsale(uacCrowdsaleAddress)`
 6. Transfer ownership of the token to the crowdsale by calling `uacTokenInstance.transferOwnership(uacCrowdsaleAddress)`
 7. Call the function in the crowdsale that mints the pre-allocated tokens for founders, advisors and UbiatarPlay `uacCrowdsaleInstance.mintPreAllocatedTokens()`
+8. Set the presale investments in the crowdsale by calling uacCrowdsaleInstance.initPresaleTokenVault(beneficiaries, balances). Note that this function can be called only one time!
 
 ## Token
 * Basic ERC20 token features.
