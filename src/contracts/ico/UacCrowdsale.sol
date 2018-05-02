@@ -86,13 +86,17 @@ contract UacCrowdsale is CrowdsaleBase {
         advisorsWallet = _advisorsWallet;
         ubiatarPlayWallet = _ubiatarPlayWallet;
         wallet = _wallet;
-        // Create founders vault contract
+        // Creates founders vault contract
         foundersVault = new TokenVesting(foundersWallet, END_TIME, FOUNDERS_VESTING_CLIFF, FOUNDERS_VESTING_DURATION, false);
 
-        // Create Ubiatar Play vault contract
+        // Creates Ubiatar Play vault contract
         ubiatarPlayVault = new UbiatarPlayVault(ubiatarPlayWallet, address(token), END_TIME);
     }
 
+    /**
+     * @dev Mints tokens to be held into the founders and Ubiatar Play vault contracts. Also mints the advisor's tokens to be held into the corresponding wallet.
+     * To be called by the crowdsale's owner only.
+     */
     function mintPreAllocatedTokens() public onlyOwner {
         mintTokens(address(foundersVault), FOUNDERS_CAP);
         mintTokens(advisorsWallet, ADVISORS_CAP);
@@ -100,7 +104,7 @@ contract UacCrowdsale is CrowdsaleBase {
     }
 
     /**
-     * @dev Creates the presale vault contract.
+     * @dev Sets the state of the presale vault contract and mints presale tokens. So far, the presale vault contract has been deployed and this function needs to be called to set its investments and vesting conditions.
      * @param beneficiaries Array of the presale investors addresses to whom vested tokens are transferred.
      * @param balances Array of token amount per beneficiary.
      */

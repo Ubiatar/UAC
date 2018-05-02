@@ -38,6 +38,13 @@ contract PresaleTokenVault {
     // key: investor address; value: index in investments array.
     mapping(address => uint256) public investorLUT;
 
+    /**
+     * @dev Funcion to be fired by the initPresaleTokenVault function from the UacCrowdale contract to set the PresaleTokenVault's state after deployment.
+     * @param beneficiaries Array of the presale investors addresses to whom vested tokens are transferred.
+     * @param balances Array of token amount per beneficiary.
+     * @param startTime Start time at which the first realeased will be executed, and from which the cliff for second release is calculated.
+     * @param _token The address of the UAC Token.
+     */
     function init(address[] beneficiaries, uint256[] balances, uint256 startTime, address _token) public {
         // makes sure this function is only called once
         require(token == address(0));
