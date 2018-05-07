@@ -15,17 +15,20 @@
 * Pause/unpause the sales in case of an emergency:
     - `reservationInstance.pause()`, `reservationInstance.unpause()`
     - `uacCrowdsaleInstance.pause()`, `uacCrowdsaleInstance.unpause()`
-**Note that no tokens can be minted when paused**.
+
+  **Note that no tokens can be minted when paused**.
 * Recover ERC20 tokens sent by mistake to the UacToken, Reservation and UacCrowdsale contracts:
     - `uacTokenInstance.reclaimToken(token)`
     - `reservationInstance.reclaimToken(token)`
     - `uacCrowdsaleInstance.reclaimToken(token)`
-The balance would be sent to the contract's owner. Then, the owner can transfer the recovered tokens to their respective owner.
+
+  The balance would be sent to the contract's owner. Then, the owner can transfer the recovered tokens to their respective owner.
 * Close the crowdsale manually before the end time:
     - `uacCrowdsaleInstance.closeCrowdsale()`
 * Finalise the crowdsale to make the tokens transferable, when the owner has closed the crowdsale or the max cap or end time has been reached:
     - `uacCrowdsaleInstance.finalise()`
-The ownership of the UacToken contract will be transferred to the Crowdsale contract's owner.
+
+  The ownership of the UacToken contract will be transferred to the Crowdsale contract's owner.
 
 ## Vesting phases
 * Presale investor can claim the vested tokens by calling `presaleTokenVaultInstance.release()`.  Tokens can be transferred by a sender to the beneficiary's address, when calling `ubiatarPlayVault.release(beneficiary)`
