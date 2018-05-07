@@ -8,33 +8,65 @@
 5. Set the crowdsale address in the reservation contract by calling `reservationInstance.setCrowdsale(uacCrowdsaleAddress)`
 6. Transfer ownership of the token to the crowdsale by calling `uacTokenInstance.transferOwnership(uacCrowdsaleAddress)`
 7. Call the function in the crowdsale that mints the pre-allocated tokens for founders, advisors and UbiatarPlay `uacCrowdsaleInstance.mintPreAllocatedTokens()`
-8. Set the presale investments in the crowdsale by calling `uacCrowdsaleInstance.initPresaleTokenVault(beneficiaries, balances)`. Note that this function can be called only one time!
+8. Set the presale investments in the crowdsale by calling `uacCrowdsaleInstance.initPresaleTokenVault(beneficiaries, balances)`. **Note that this function can be called only one time!**.
 
-## Token
+## During the Reservation & Crowdsale phases
+###### Callable by the owner only:
+* Pause/unpause the sales in case of an emergency:
+    - `reservationInstance.pause()`, `reservationInstance.unpause()`
+    - `uacCrowdsaleInstance.pause()`, `uacCrowdsaleInstance.unpause()`
+**Note that no tokens can be minted when paused**.
+* Recover ERC20 tokens sent by mistake to the UacToken, Reservation and UacCrowdsale contracts:
+    - `uacTokenInstance.reclaimToken(token)`
+    - `reservationInstance.reclaimToken(token)`
+    - `uacCrowdsaleInstance.reclaimToken(token)`
+The balance would be sent to the contract's owner. Then, the owner can transfer the recovered tokens to their respective owner.
+* Close the crowdsale manually before the end time:
+    - `uacCrowdsaleInstance.closeCrowdsale()`
+* Finalise the crowdsale to make the tokens transferable, when the owner has closed the crowdsale or the max cap or end time has been reached:
+    - `uacCrowdsaleInstance.finalise()`
+The ownership of the UacToken contract will be transferred to the Crowdsale contract's owner.
+
+## Vesting phases
+* Presale investor can claim the vested tokens by calling `presaleTokenVaultInstance.release()`.  Tokens can be transferred by a sender to the beneficiary's address, when calling `ubiatarPlayVault.release(beneficiary)`
+* Transfer vested tokens to the UbiatarPlay wallet by calling `ubiatarPlayVaultInstance.release()`
+* Transfer vested tokens to the founders wallet by calling `foundersVaultInstance.release()`
+
+## Specifications
+###### Token
 * Basic ERC20 token features.
 * Mintable (by corresponding crowdsale contract only).
 * Pausable by owner.
 * Name: “Ubiatar Coin”.
 * Symbol: “UAC”.
 * Decimals: 18.
-* Reclaimable token: allows the token contract to recover any ERC20 token received by
-transferring the balance to the contract owner.
+* Reclaimable token: allows the owner to recover any ERC20 token received. During the crowdsale period, the owner of the token is the crowdsale contract, therefore, it's convenient to reclaim tokens after the crowdsale has ended.
 
-## Crowdsale
+###### Reservation contract
+* Start time: Epoch timestamp: 1525683600 (7 May 2018 09:00:00 GMT).
+* End time: Epoch timestamp: 1525856400 (9 May 2018 09:00:00 GMT).
+* Hard cap: 7.500.000 tokens (part of the ICO’s 15.000.000 hard cap).
+* Price: USD 2 per token.
+* Bonus: 10%.
+* Pausable: owner is able to pause (and unpause) the reservation phase.
+* Reclaimable token: allows the owner to recover any ERC20 token received.
+* Implements Eidoo interface:
+https://github.com/eidoo/icoengine/blob/master/contracts/ICOEngineInterface.sol.
+* KYC implementation, based on
+https://github.com/eidoo/icoengine/blob/master/contracts/KYCBase.sol
+
+###### Crowdsale
 * Start time: Epoch timestamp: 1525856400 (9 May 2018 09:00:00 GMT).
 * End time: Epoch timestamp: 1528448400 (8 June 2018 09:00:00 GMT).
 * Price: USD 2 per token.
 * Hard cap: 15.000.000 UAC tokens.
-* Pausable: owner is able to pause (and unpause) the crowdsale in case of an
-emergency. No tokens can be minted when paused.
-* Reclaimable token: allows the crowdsale contract to recover any ERC20 token received
-by transferring the balance to the contract owner.
+* Pausable: owner is able to pause (and unpause) the crowdsale phase.
+* Reclaimable token: allows the owner to recover any ERC20 token received.
 * Paused until ICO end epoch time.
 * It should be possible to buy tokens for a specific address.
 * Controlled: once the ICO has finished, it may not be possible to arbitrarily issue new
 tokens.
 * Tokens issued simultaneously with the reception of ether.
-
 * Discounts on price:
     * 8% until first 3 hours.
     * 6% until first 12 hour.
@@ -44,7 +76,7 @@ https://github.com/eidoo/icoengine/blob/master/contracts/ICOEngineInterface.sol
 * KYC implementation, based on
 https://github.com/eidoo/icoengine/blob/master/contracts/KYCBase.sol
 
-## Token allocation
+###### Token allocation
 * Pre-sale
     * Already finished.
     * List of Presale investors wallet with UAC amount.
@@ -75,21 +107,6 @@ https://github.com/eidoo/icoengine/blob/master/contracts/KYCBase.sol
     * Total of 4.915.221,448641099899301307 tokens (the sum of
     advisors plus presale is 23,5 million tokens).
     * To be unlocked immediately after ICO on a specific address (no vesting).
-
-## Reservation contract
-* Start time: Epoch timestamp: 1525683600 (7 May 2018 09:00:00 GMT).
-* End time: Epoch timestamp: 1525856400 (9 May 2018 09:00:00 GMT).
-* Hard cap: 7.500.000 tokens (part of the ICO’s 15.000.000 hard cap).
-* Price: USD 2 per token.
-* Bonus: 10%.
-* Pausable: owner is able to pause (and unpause) the crowdsale in case of an
-emergency. No tokens can be minted when paused.
-* Reclaimable token: allows the crowdsale contract to recover any ERC20 token received
-by transferring the balance to the contract owner.
-* Implements Eidoo interface:
-https://github.com/eidoo/icoengine/blob/master/contracts/ICOEngineInterface.sol.
-* KYC implementation, based on
-https://github.com/eidoo/icoengine/blob/master/contracts/KYCBase.sol
 
 ## Requirements
 The server side scripts requires NodeJS 8 to work properly.
